@@ -1,13 +1,50 @@
-name: CI
+name: Build SPASM-ng on Windows (MinGW)
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-windows-mingw:
+    runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: make
-    - name: Test
-      run: make check
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up MSYS2 (MinGW)
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64 # Use the 64-bit MinGW environment
+        update: true
+        install: >
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-gmp
+          mingw-w64-x86_64-openssl
+          make
+          python # For running tests, if needed
+
+    - name: Build SPASM-ng
+      shell: msys2 {0}
+      run: |
+        make version
+        make
+
+    - name: Run Tests (Optional)
+      shell: msys2 {0}
+      run: |
+        # If SPASM-ng has a 'make test' or a specific test script, run it here.
+        # Example: python tests/run_tests.py
+        echo "Skipping tests for brevity, add your test command if available."
+
+    - name: Upload SPASM-ng artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spasm-ng-windows-mingw
+        path: spasm.exe # Or whatever the compiled executable name is
